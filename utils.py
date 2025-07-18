@@ -8,10 +8,11 @@ def clean_data(df):
     return df
 
 def display_dashboard(df):
-    st.write("### Nombre total d’annonces :", len(df))
-    col1, col2 = st.columns(2)
-    with col1:
-        st.bar_chart(df["type"].value_counts())
-    with col2:
+    st.metric("Nombre total d'annonces", len(df))
+    st.bar_chart(df["type"].value_counts())
+
+    if "prix" in df.columns:
         st.line_chart(df.groupby("type")["prix"].mean())
-    st.map(df.dropna(subset=["adresse"]))
+
+    if "adresse" in df.columns:
+        st.map(df.dropna(subset=["adresse"]))

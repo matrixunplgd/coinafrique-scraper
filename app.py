@@ -1,63 +1,83 @@
 import streamlit as st
 import pandas as pd
-from scraping import scrape_all_urls
+from scraping import scrape_category
 from utils import clean_data, display_dashboard
 
-st.set_page_config(page_title="Web Scraper App", layout="wide")
+st.set_page_config(page_title="Exam - Web Scraper App", layout="wide")
 
-st.title("🕸️ Web Scraper App – CoinAfrique")
+st.title("📦 Application Web Scraping – CoinAfrique")
 
-# Menu
-menu = ["Accueil", "Scraper des données", "Télécharger données brutes", "Dashboard", "Évaluer l'app"]
-choice = st.sidebar.selectbox("Menu", menu)
+menu = [
+    "Accueil",
+    "1️⃣ Scraper avec BeautifulSoup",
+    "2️⃣ Télécharger des données Web Scraper",
+    "3️⃣ Dashboard (Nettoyé)",
+    "4️⃣ Évaluation via Kobotools"
+]
+
+choice = st.sidebar.selectbox("Navigation", menu)
 
 if choice == "Accueil":
-    st.markdown("### Bienvenue dans l'application de scraping CoinAfrique !")
-    st.markdown("- Scraping de plusieurs pages")
-    st.markdown("- Visualisation et nettoyage de données")
-    st.markdown("- Téléchargement de données Web Scraper")
-    st.markdown("- Dashboard interactif")
+    st.markdown("### Bienvenue dans l'application CoinAfrique Scraper")
+    st.markdown("Vous pouvez :")
+    st.markdown("- Scraper les données avec BeautifulSoup")
+    st.markdown("- Télécharger les données Web Scraper")
+    st.markdown("- Visualiser un dashboard")
+    st.markdown("- Remplir un formulaire d’évaluation")
 
-elif choice == "Scraper des données":
-    st.subheader("🔍 Scraper les données CoinAfrique")
+# Option 1 – Scraping
+elif choice == "1️⃣ Scraper avec BeautifulSoup":
+    st.subheader("🔍 Scraper les données")
+    st.markdown("Choisissez une catégorie et le nombre de pages à scraper")
 
-    if st.button("Lancer le scraping (12 pages)"):
-        data = scrape_all_urls()
+    categories = {
+        "Chaussures Enfants": "https://sn.coinafrique.com/categorie/chaussures-enfants",
+        "Chaussures Hommes": "https://sn.coinafrique.com/categorie/chaussures-homme",
+        "Vêtements Enfants": "https://sn.coinafrique.com/categorie/vetements-enfants",
+        "Vêtements Hommes": "https://sn.coinafrique.com/categorie/vetements-homme"
+    }
+
+    selected_category = st.radio("Choisissez une catégorie", list(categories.keys()))
+    page_count = st.number_input("Nombre de pages à scraper", min_value=1, max_value=20, value=5)
+
+    if st.button("Lancer le scraping"):
+        url = categories[selected_category]
+        type_article = "chaussures" if "Chaussures" in selected_category else "habits"
+        data = scrape_category(url, type_article, page_count)
         df = pd.DataFrame(data)
-        df_clean = clean_data(df)
-        df_clean.to_csv("data/cleaned_data.csv", index=False)
-        st.success("Scraping terminé et données nettoyées enregistrées !")
-        st.dataframe(df_clean.head())
+        st.dataframe(df.head())
+        filename = f"data_clean/{selected_category.lower().replace(' ', '_')}.csv"
+        df.to_csv(filename, index=False, encoding="utf-8-sig")
+        st.success(f"Scraping terminé. Données enregistrées dans : `{filename}`")
 
-elif choice == "Télécharger données brutes":
-    st.subheader("📥 Données brutes de Web Scraper")
-    uploaded_file = st.file_uploader("Uploader un fichier CSV ou JSON exporté depuis Web Scraper", type=["csv", "json"])
+# Option 2 – Télécharger fichier Web Scraper
+elif choice == "2️⃣ Télécharger des données Web Scraper":
+    st.subheader("📥 Données Web Scraper")
+    fichier = st.selectbox("Choisir un fichier brut à télécharger", [
+        "chaussures_enfants.csv",
+        "vetements_enfants.csv",
+        "chaussures_hommes.csv",
+        "vetements_hommes.csv"
+    ])
 
-    if uploaded_file:
-        if uploaded_file.name.endswith(".csv"):
-            df_raw = pd.read_csv(uploaded_file)
-        else:
-            df_raw = pd.read_json(uploaded_file)
-        st.write("Aperçu des données brutes :")
-        st.dataframe(df_raw.head())
-        st.download_button("Télécharger données brutes", df_raw.to_csv(index=False), file_name="raw_webscraper.csv")
-
-elif choice == "Dashboard":
-    st.subheader("📊 Dashboard – Données nettoyées")
     try:
-        df_cleaned = pd.read_csv("data/cleaned_data.csv")
-        display_dashboard(df_cleaned)
-    except FileNotFoundError:
-        st.warning("Aucune donnée nettoyée trouvée. Lancez le scraping d'abord.")
+        df = pd.read_csv(f"data1/{fichier}")
+        st.dataframe(df.head())
+        st.download_button("📤 Télécharger le fichier", df.to_csv(index=False), file_name=fichier)
+    except:
+        st.warning("Fichier introuvable.")
 
-elif choice == "Évaluer l'app":
+# Option 3 – Dashboard
+elif choice == "3️⃣ Dashboard (Nettoyé)":
+    st.subheader("📊 Dashboard des données nettoyées")
+    try:
+        df_clean = pd.read_csv("data_clean/cleaned_data.csv")
+        display_dashboard(df_clean)
+    except:
+        st.warning("Aucune donnée nettoyée trouvée.")
+
+# Option 4 – Kobotools
+elif choice == "4️⃣ Évaluation via Kobotools":
     st.subheader("📝 Formulaire d’évaluation")
-    nom = st.text_input("Votre nom")
-    note = st.slider("Note de l’application", 1, 10)
-    avis = st.text_area("Donnez votre avis")
-
-    if st.button("Soumettre"):
-        with open("feedback.txt", "a", encoding="utf-8") as f:
-            f.write(f"Nom: {nom}, Note: {note}, Avis: {avis}\n")
-        st.success("Merci pour votre retour 🙏")
-
+    kobotools_url = "https://ee.kobotoolbox.org/x/TON_ID_FORMULAIRE"  # Remplace avec ton vrai lien
+    st.markdown(f"[Cliquez ici pour remplir le formulaire]({kobotools_url})")
