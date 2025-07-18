@@ -1,18 +1,18 @@
 import pandas as pd
-import streamlit as st
+import os
 
-def clean_data(df):
-    df = df.drop_duplicates()
-    df["prix"] = df["prix"].str.replace("FCFA", "").str.replace(" ", "").str.replace("\u202f", "")
-    df["prix"] = pd.to_numeric(df["prix"], errors='coerce')
-    return df
+def clean_data(input_file, output_file):
+    """Nettoie les données et les sauvegarde dans data1/"""
+    try:
+        df = pd.read_csv(input_file)
 
-def display_dashboard(df):
-    st.metric("Nombre total d'annonces", len(df))
-    st.bar_chart(df["type"].value_counts())
+        # Exemple : enlever les doublons et les lignes vides
+        df.drop_duplicates(inplace=True)
+        df.dropna(subset=['titre', 'prix'], inplace=True)
 
-    if "prix" in df.columns:
-        st.line_chart(df.groupby("type")["prix"].mean())
-
-    if "adresse" in df.columns:
-        st.map(df.dropna(subset=["adresse"]))
+        os.makedirs(os.path.dirname(output_file), exist_ok=True)
+        df.to_csv(output_file, index=False, encoding='utf-8-sig')
+        return df
+    except Exception as e:
+        print(f"Erreur nettoyage : {e}")
+        return pd.DataFrame()
