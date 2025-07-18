@@ -1,34 +1,45 @@
 import streamlit as st
 import pandas as pd
+import os
+import zipfile
+
 from scraper import scrape_category
 from utils import clean_data, display_dashboard
 
-st.set_page_config(page_title="Exam - Web Scraper App", layout="wide")
-
+# -----------------------------
+# Configuration globale
+# -----------------------------
+st.set_page_config(page_title="Web Scraper App - CoinAfrique", layout="wide")
 st.title("📦 Application Web Scraping – CoinAfrique")
 
+DATA_RAW = "data_clean"
+DATA_CLEAN = "data1"
+
+# -----------------------------
+# Menu
+# -----------------------------
 menu = [
     "Accueil",
-    "1️⃣ Scraper avec BeautifulSoup",
-    "2️⃣ Télécharger des données Web Scraper",
-    "3️⃣ Dashboard (Nettoyé)",
-    "4️⃣ Évaluation via Kobotools"
+    "1️⃣ Scraper les données (data_clean)",
+    "2️⃣ Nettoyer les données (→ data1)",
+    "3️⃣ Télécharger les données",
+    "4️⃣ Dashboard",
+    "5️⃣ Formulaire Kobotools"
 ]
-
 choice = st.sidebar.selectbox("Navigation", menu)
 
+# -----------------------------
+# 0. Accueil
+# -----------------------------
 if choice == "Accueil":
-    st.markdown("### Bienvenue dans l'application CoinAfrique Scraper")
-    st.markdown("Vous pouvez :")
-    st.markdown("- Scraper les données avec BeautifulSoup")
-    st.markdown("- Télécharger les données Web Scraper")
-    st.markdown("- Visualiser un dashboard")
-    st.markdown("- Remplir un formulaire d’évaluation")
+    st.header("Bienvenue 👋")
+    st.markdown("Cette application permet de scraper CoinAfrique, nettoyer les données, et explorer les résultats via un dashboard.")
 
-# Option 1 – Scraping
-elif choice == "1️⃣ Scraper avec BeautifulSoup":
-    st.subheader("🔍 Scraper les données")
-    st.markdown("Choisissez une catégorie et le nombre de pages à scraper")
+# -----------------------------
+# 1. Scraper les données brutes
+# -----------------------------
+elif choice == "1️⃣ Scraper les données (data_clean)":
+    st.subheader("🔍 Scraping CoinAfrique")
 
     categories = {
         "Chaussures Enfants": "https://sn.coinafrique.com/categorie/chaussures-enfants",
@@ -37,47 +48,93 @@ elif choice == "1️⃣ Scraper avec BeautifulSoup":
         "Vêtements Hommes": "https://sn.coinafrique.com/categorie/vetements-homme"
     }
 
-    selected_category = st.radio("Choisissez une catégorie", list(categories.keys()))
-    page_count = st.number_input("Nombre de pages à scraper", min_value=1, max_value=20, value=5)
+    selected_category = st.radio("Choisir une catégorie", list(categories.keys()))
+    page_count = st.slider("Nombre de pages à scraper", 1, 20, 5)
 
-    if st.button("Lancer le scraping"):
+    if st.button("🚀 Lancer le scraping"):
         url = categories[selected_category]
         type_article = "chaussures" if "Chaussures" in selected_category else "habits"
-        data = scrape_category(url, type_article, page_count)
-        df = pd.DataFrame(data)
-        st.dataframe(df.head())
-        filename = f"data_clean/{selected_category.lower().replace(' ', '_')}.csv"
-        df.to_csv(filename, index=False, encoding="utf-8-sig")
-        st.success(f"Scraping terminé. Données enregistrées dans : `{filename}`")
+        df = scrape_category(url, type_article, page_count)
 
-# Option 2 – Télécharger fichier Web Scraper
-elif choice == "2️⃣ Télécharger des données Web Scraper":
-    st.subheader("📥 Données Web Scraper")
-    fichier = st.selectbox("Choisir un fichier brut à télécharger", [
-        "chaussures_enfants.csv",
-        "vetements_enfants.csv",
-        "chaussures_hommes.csv",
-        "vetements_hommes.csv"
-    ])
+        if not df.empty:
+            st.dataframe(df.head())
+            os.makedirs(DATA_RAW, exist_ok=True)
+            file_name = selected_category.lower().replace(" ", "_") + ".csv"
+            raw_path = f"{DATA_RAW}/{file_name}"
+            df.to_csv(raw_path, index=False, encoding="utf-8-sig")
+            st.success(f"✅ Fichier sauvegardé dans `{raw_path}`")
+        else:
+            st.warning("⚠️ Aucune donnée trouvée.")
+
+# -----------------------------
+# 2. Nettoyer les données
+# -----------------------------
+elif choice == "2️⃣ Nettoyer les données (→ data1)":
+    st.subheader("🧹 Nettoyage des fichiers bruts")
 
     try:
-        df = pd.read_csv(f"data1/{fichier}")
-        st.dataframe(df.head())
-        st.download_button("📤 Télécharger le fichier", df.to_csv(index=False), file_name=fichier)
-    except:
-        st.warning("Fichier introuvable.")
+        files = [f for f in os.listdir(DATA_RAW) if f.endswith(".csv")]
+        fichier = st.selectbox("Sélectionnez un fichier à nettoyer", files)
 
-# Option 3 – Dashboard
-elif choice == "3️⃣ Dashboard (Nettoyé)":
-    st.subheader("📊 Dashboard des données nettoyées")
+        if st.button("🧼 Nettoyer le fichier sélectionné"):
+            input_path = f"{DATA_RAW}/{fichier}"
+            output_path = f"{DATA_CLEAN}/{fichier}"
+            cleaned_df = clean_data(input_path, output_path)
+
+            if not cleaned_df.empty:
+                st.success(f"✅ Données nettoyées sauvegardées dans `{output_path}`")
+                st.dataframe(cleaned_df.head())
+            else:
+                st.warning("⚠️ Fichier vide ou erreur de nettoyage.")
+    except FileNotFoundError:
+        st.warning(f"⚠️ Aucun fichier trouvé dans `{DATA_RAW}`.")
+
+# -----------------------------
+# 3. Télécharger les données
+# -----------------------------
+elif choice == "3️⃣ Télécharger les données":
+    st.subheader("📥 Télécharger les fichiers nettoyés (data1)")
+
     try:
-        df_clean = pd.read_csv("data_clean/cleaned_data.csv")
+        files = [f for f in os.listdir(DATA_CLEAN) if f.endswith(".csv")]
+        fichier = st.selectbox("Choisir un fichier à télécharger", files)
+
+        file_path = f"{DATA_CLEAN}/{fichier}"
+        if os.path.exists(file_path):
+            df = pd.read_csv(file_path)
+            st.dataframe(df.head())
+            st.download_button("📤 Télécharger ce fichier", df.to_csv(index=False), file_name=fichier)
+        else:
+            st.warning("⚠️ Fichier introuvable.")
+        
+        # ✅ Télécharger tous les fichiers en ZIP
+        if st.button("📦 Télécharger tous les fichiers en ZIP"):
+            zip_path = "fichiers_nettoyes.zip"
+            with zipfile.ZipFile(zip_path, "w") as zipf:
+                for file in files:
+                    zipf.write(os.path.join(DATA_CLEAN, file), arcname=file)
+            with open(zip_path, "rb") as f:
+                st.download_button("⬇️ Télécharger le ZIP", f, file_name=zip_path)
+            os.remove(zip_path)
+    except FileNotFoundError:
+        st.warning(f"⚠️ Aucun fichier trouvé dans `{DATA_CLEAN}`.")
+
+# -----------------------------
+# 4. Dashboard
+# -----------------------------
+elif choice == "4️⃣ Dashboard":
+    st.subheader("📊 Visualisation des données nettoyées")
+
+    try:
+        df_clean = pd.read_csv(f"{DATA_CLEAN}/cleaned_data.csv")
         display_dashboard(df_clean)
     except:
-        st.warning("Aucune donnée nettoyée trouvée.")
+        st.warning("⚠️ `cleaned_data.csv` introuvable dans `data1/`.")
 
-# Option 4 – Kobotools
-elif choice == "4️⃣ Évaluation via Kobotools":
-    st.subheader("📝 Formulaire d’évaluation")
-    kobotools_url ="https://ee.kobotoolbox.org/i/WoLHl7cc"  
-    st.markdown(f"[Cliquez ici pour remplir le formulaire]({kobotools_url})")
+# -----------------------------
+# 5. Kobotools
+# -----------------------------
+elif choice == "5️⃣ Formulaire Kobotools":
+    st.subheader("📝 Évaluation via Kobotools")
+    url = "https://ee.kobotoolbox.org/i/WoLHl7cc"
+    st.markdown(f"[Cliquez ici pour remplir le formulaire]({url})")
