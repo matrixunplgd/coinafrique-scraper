@@ -79,5 +79,5 @@ elif choice == "3️⃣ Dashboard (Nettoyé)":
 # Option 4 – Kobotools
 elif choice == "4️⃣ Évaluation via Kobotools":
     st.subheader("📝 Formulaire d’évaluation")
-    kobotools_url = "https://ee.kobotoolbox.org/x/TON_ID_FORMULAIRE"  # Remplace avec ton vrai lien
+    kobotools_url ="https://ee.kobotoolbox.org/i/WoLHl7cc"  
     st.markdown(f"[Cliquez ici pour remplir le formulaire]({kobotools_url})")
