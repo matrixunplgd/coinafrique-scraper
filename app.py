@@ -141,5 +141,11 @@ elif choice == "4️⃣ Dashboard":
 # -----------------------------
 elif choice == "5️⃣ Formulaire Kobotools":
     st.subheader("📝 Évaluation via Kobotools")
-    url = "https://ee.kobotoolbox.org/i/WoLHl7cc"
-    st.markdown(f"[Cliquez ici pour remplir le formulaire]({url})")
+
+    st.components.v1.html(
+        """
+        <iframe src="https://ee.kobotoolbox.org/i/WoLHl7cc" width="50%" height="600" frameborder="0"></iframe>
+        """,
+        height=650,
+        scrolling=True
+    )
