@@ -42,31 +42,32 @@ def clean_data(input_path, output_path=None):
 
 def display_dashboard(df):
     st.markdown("## 📊 Dashboard interactif")
-
-    # Aperçu des données
-    st.write("### Aperçu rapide des données")
+    
+    st.markdown("### 🔍 Aperçu rapide des données")
     st.dataframe(df.head())
 
-    # Statistiques descriptives
-    st.write("### Statistiques sur les prix")
-    if "prix" in df.columns:
-        col1, col2, col3 = st.columns(3)
-        col1.metric("Prix Moyen", f"{df['prix'].mean():,.0f} FCFA")
-        col2.metric("Min", f"{df['prix'].min():,.0f} FCFA")
-        col3.metric("Max", f"{df['prix'].max():,.0f} FCFA")
+    st.markdown("### 📈 Statistiques sur les prix")
 
-        # Histogramme des prix
-        fig, ax = plt.subplots(figsize=(8, 4))
-        sns.histplot(df["prix"], bins=30, kde=True, ax=ax, color="skyblue")
-        ax.set_title("Distribution des prix")
-        ax.set_xlabel("Prix (FCFA)")
-        st.pyplot(fig)
-    else:
-        st.warning("La colonne `prix` est absente dans le fichier.")
+    try:
+        # Nettoyage de la colonne 'prix'
+        df_clean = df.copy()
+        df_clean = df_clean[df_clean['prix'].str.contains("CFA", na=False)]
+        df_clean = df_clean[~df_clean['prix'].str.contains("Prix sur demande", case=False, na=False)]
 
-    # Catégories si présentes
-    for col in ["ville", "titre", "categorie", "nom"]:
-        if col in df.columns:
-            st.write(f"### Top valeurs dans : `{col}`")
-            st.dataframe(df[col].value_counts().head(10))
+        # Supprimer les caractères inutiles et convertir en nombre
+        df_clean["prix_num"] = df_clean["prix"].str.replace("CFA", "", regex=False)
+        df_clean["prix_num"] = df_clean["prix_num"].str.replace(" ", "", regex=False)
+        df_clean["prix_num"] = pd.to_numeric(df_clean["prix_num"], errors="coerce")
 
+        # Supprimer les valeurs NaN
+        df_clean = df_clean.dropna(subset=["prix_num"])
+
+        # Afficher les statistiques
+        st.metric("Prix moyen", f"{int(df_clean['prix_num'].mean()):,} CFA")
+        st.metric("Prix minimum", f"{int(df_clean['prix_num'].min()):,} CFA")
+        st.metric("Prix maximum", f"{int(df_clean['prix_num'].max()):,} CFA")
+
+        st.bar_chart(df_clean["prix_num"])
+    
+    except Exception as e:
+        st.error(f"❌ Une erreur est survenue : {e}")
