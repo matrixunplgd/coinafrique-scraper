@@ -36,8 +36,6 @@ def clean_data(input_path, output_path=None):
 
 
 
-# Dashboard des données nettoyées
-
 def display_dashboard(df):
     st.subheader("Dashboard interactif")
     
@@ -47,28 +45,29 @@ def display_dashboard(df):
     st.write("Statistiques sur les prix")
 
     try:
-        # Nettoyage de la colonne 'prix'
         df_clean = df.copy()
-
-        # 🔧 CORRECTION : forcer la colonne en string
         df_clean["prix"] = df_clean["prix"].astype(str)
 
-        # Filtrer les valeurs contenant "CFA" et exclure "Prix sur demande"
         df_clean = df_clean[df_clean['prix'].str.contains("CFA", na=False)]
         df_clean = df_clean[~df_clean['prix'].str.contains("Prix sur demande", case=False, na=False)]
 
-        # Nettoyer et convertir les prix en nombres
         df_clean["prix_num"] = df_clean["prix"].str.replace("CFA", "", regex=False)
         df_clean["prix_num"] = df_clean["prix_num"].str.replace(" ", "", regex=False)
         df_clean["prix_num"] = pd.to_numeric(df_clean["prix_num"], errors="coerce")
 
-        # Supprimer les valeurs NaN
         df_clean = df_clean.dropna(subset=["prix_num"])
 
-        # Afficher les statistiques
-        st.metric("Prix moyen", f"{int(df_clean['prix_num'].mean()):,} CFA")
-        st.metric("Prix minimum", f"{int(df_clean['prix_num'].min()):,} CFA")
-        st.metric("Prix maximum", f"{int(df_clean['prix_num'].max()):,} CFA")
+        mean_price = df_clean['prix_num'].mean()
+        min_price = df_clean['prix_num'].min()
+        max_price = df_clean['prix_num'].max()
+
+        mean_price_str = "N/A" if pd.isna(mean_price) else f"{int(mean_price):,} CFA"
+        min_price_str = "N/A" if pd.isna(min_price) else f"{int(min_price):,} CFA"
+        max_price_str = "N/A" if pd.isna(max_price) else f"{int(max_price):,} CFA"
+
+        st.metric("Prix moyen", mean_price_str)
+        st.metric("Prix minimum", min_price_str)
+        st.metric("Prix maximum", max_price_str)
 
         st.bar_chart(df_clean["prix_num"])
     
