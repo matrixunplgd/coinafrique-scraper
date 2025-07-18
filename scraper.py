@@ -1,6 +1,8 @@
 import requests
 from bs4 import BeautifulSoup
 import time
+import pandas as pd  # 👈 Ajouté pour l'enregistrement CSV
+import os  # 👈 Pour créer le dossier s’il n’existe pas
 
 def scrape_category(url, type_article, max_pages):
     all_data = []
@@ -28,5 +30,21 @@ def scrape_category(url, type_article, max_pages):
             })
 
         time.sleep(1)
+
+    # 🔽 Enregistrer les données
+    if all_data:
+        # Créer le dossier s’il n’existe pas
+        os.makedirs("data", exist_ok=True)
+
+        # Nom du fichier basé sur le type d'article
+        file_path = f"data/{type_article.lower().replace(' ', '_')}.csv"
+
+        # Sauvegarder dans un CSV
+        df = pd.DataFrame(all_data)
+        df.to_csv(file_path, index=False, encoding="utf-8-sig")
+
+        print(f"✅ Données enregistrées dans {file_path}")
+    else:
+        print("❌ Aucune donnée collectée.")
 
     return all_data
