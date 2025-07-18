@@ -1,33 +1,39 @@
 import requests
 from bs4 import BeautifulSoup
+import time
 import pandas as pd
 
-def scrape_category(url, type_article, page_count=5):
+def scrape_category(url, type_article, max_pages):
     all_data = []
+    headers = {
+        "User-Agent": "Mozilla/5.0"
+    }
 
-    for page in range(1, page_count + 1):
-        page_url = f"{url}?page={page}"
-        print(f"Scraping {page_url}...")
+    for page in range(1, max_pages + 1):
+        full_url = f"{url}?page={page}"
+        print(f"Scraping: {full_url}")
+        res = requests.get(full_url, headers=headers)
+        soup = BeautifulSoup(res.content, "html.parser")
+        cards = soup.select("div.m4")
 
-        response = requests.get(page_url)
-        response.raise_for_status()
-
-        soup = BeautifulSoup(response.content, "html.parser")
-        products = soup.find_all("div", class_="sc-c0c5e0d3-0")
-
-        for product in products:
-            title = product.find("p", class_="sc-d1ede7e3-0").text.strip()
-            price = product.find("span", class_="sc-3ef5a5d2-0").text.strip()
-            location = product.find("span", class_="sc-e0f5a8b3-0").text.strip()
-            image = product.find("img")["src"]
+        for card in cards:
+            prix = card.select_one("p.ad__card-price")
+            adresse = card.select_one(".ad__card-location span")
+            image = card.select_one("img")
 
             all_data.append({
                 "type": type_article,
-                "nom": title,
-                "prix": price,
-                "adresse": location,
-                "image_lien": image
+                "prix": prix.text.strip() if prix else None,
+                "adresse": adresse.text.strip() if adresse else None,
+                "image_lien": image["src"] if image and image.has_attr("src") else None
             })
 
-    df = pd.DataFrame(all_data)
-    return df
+        time.sleep(1)
+
+    if all_data:
+        print(f"✅ {len(all_data)} articles collectés.")
+    else:
+        print("❌ Aucune donnée collectée.")
+
+    # Retourne les données sous forme de DataFrame (plus pratique pour Streamlit)
+    return pd.DataFrame(all_data)
