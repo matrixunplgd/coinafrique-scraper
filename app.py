@@ -5,40 +5,28 @@ import zipfile
 from scraper import scrape_category
 from utils import clean_data, display_dashboard
 
-# -----------------------------
-# Configuration globale
-# -----------------------------
 st.set_page_config(page_title="Web Scraper App - CoinAfrique", layout="wide")
-st.title("📦 Application Web Scraping – CoinAfrique")
+st.title("Application Web Scraping – CoinAfrique")
 
 DATA_RAW = "data_clean"
 DATA_CLEAN = "data1"
 
-# -----------------------------
-# Menu
-# -----------------------------
 menu = [
     "Accueil",
-    "1️⃣ Scraper les données (data_clean)",
-    "2️⃣ Nettoyer les données (→ data1)",
-    "3️⃣ Télécharger les données",
-    "4️⃣ Dashboard",
-    "5️⃣ Formulaire Kobotools"
+    "1. Scraper les données (data_clean)",
+    "2. Nettoyer les données (→ data1)",
+    "3. Télécharger les données",
+    "4. Dashboard",
+    "5. Formulaire Kobotools"
 ]
 choice = st.sidebar.selectbox("Navigation", menu)
 
-# -----------------------------
-# 0. Accueil
-# -----------------------------
 if choice == "Accueil":
-    st.header("Bienvenue 👋")
-    st.markdown("Cette application permet de scraper CoinAfrique, nettoyer les données, et explorer les résultats via un dashboard.")
+    st.header("Bienvenue")
+    st.write("Cette application permet de scraper CoinAfrique, nettoyer les données, et explorer les résultats via un dashboard.")
 
-# -----------------------------
-# 1. Scraper les données brutes
-# -----------------------------
-elif choice == "1️⃣ Scraper les données (data_clean)":
-    st.subheader("🔍 Scraping CoinAfrique")
+elif choice == "1. Scraper les données (data_clean)":
+    st.subheader("Scraping CoinAfrique")
 
     categories = {
         "Chaussures Enfants": "https://sn.coinafrique.com/categorie/chaussures-enfants",
@@ -50,7 +38,7 @@ elif choice == "1️⃣ Scraper les données (data_clean)":
     selected_category = st.radio("Choisir une catégorie", list(categories.keys()))
     page_count = st.slider("Nombre de pages à scraper", 1, 20, 5)
 
-    if st.button("🚀 Lancer le scraping"):
+    if st.button("Lancer le scraping"):
         url = categories[selected_category]
         type_article = "chaussures" if "Chaussures" in selected_category else "habits"
         df = scrape_category(url, type_article, page_count)
@@ -61,38 +49,32 @@ elif choice == "1️⃣ Scraper les données (data_clean)":
             file_name = selected_category.lower().replace(" ", "_") + ".csv"
             raw_path = f"{DATA_RAW}/{file_name}"
             df.to_csv(raw_path, index=False, encoding="utf-8-sig")
-            st.success(f"✅ Fichier sauvegardé dans `{raw_path}`")
+            st.success(f"Fichier sauvegardé dans `{raw_path}`")
         else:
-            st.warning("⚠️ Aucune donnée trouvée.")
+            st.warning("Aucune donnée trouvée.")
 
-# -----------------------------
-# 2. Nettoyer les données
-# -----------------------------
-elif choice == "2️⃣ Nettoyer les données (→ data1)":
-    st.subheader("🧹 Nettoyage des fichiers bruts")
+elif choice == "2. Nettoyer les données (→ data1)":
+    st.subheader("Nettoyage des fichiers bruts")
 
     try:
         files = [f for f in os.listdir(DATA_RAW) if f.endswith(".csv")]
         fichier = st.selectbox("Sélectionnez un fichier à nettoyer", files)
 
-        if st.button("🧼 Nettoyer le fichier sélectionné"):
+        if st.button("Nettoyer le fichier sélectionné"):
             input_path = f"{DATA_RAW}/{fichier}"
             output_path = f"{DATA_CLEAN}/{fichier}"
             cleaned_df = clean_data(input_path, output_path)
 
             if not cleaned_df.empty:
-                st.success(f"✅ Données nettoyées sauvegardées dans `{output_path}`")
+                st.success(f"Données nettoyées sauvegardées dans `{output_path}`")
                 st.dataframe(cleaned_df.head())
             else:
-                st.warning("⚠️ Fichier vide ou erreur de nettoyage.")
+                st.warning("Fichier vide ou erreur de nettoyage.")
     except FileNotFoundError:
-        st.warning(f"⚠️ Aucun fichier trouvé dans `{DATA_RAW}`.")
+        st.warning(f"Aucun fichier trouvé dans `{DATA_RAW}`.")
 
-# -----------------------------
-# 3. Télécharger les données
-# -----------------------------
-elif choice == "3️⃣ Télécharger les données":
-    st.subheader("📥 Télécharger les fichiers nettoyés (data1)")
+elif choice == "3. Télécharger les données":
+    st.subheader("Téléchargement des fichiers nettoyés")
 
     try:
         files = [f for f in os.listdir(DATA_CLEAN) if f.endswith(".csv")]
@@ -102,27 +84,23 @@ elif choice == "3️⃣ Télécharger les données":
         if os.path.exists(file_path):
             df = pd.read_csv(file_path)
             st.dataframe(df.head())
-            st.download_button("📤 Télécharger ce fichier", df.to_csv(index=False), file_name=fichier)
+            st.download_button("Télécharger ce fichier", df.to_csv(index=False), file_name=fichier)
         else:
-            st.warning("⚠️ Fichier introuvable.")
-        
-        # ✅ Télécharger tous les fichiers en ZIP
-        if st.button("📦 Télécharger tous les fichiers en ZIP"):
+            st.warning("Fichier introuvable.")
+
+        if st.button("Télécharger tous les fichiers en ZIP"):
             zip_path = "fichiers_nettoyes.zip"
             with zipfile.ZipFile(zip_path, "w") as zipf:
                 for file in files:
                     zipf.write(os.path.join(DATA_CLEAN, file), arcname=file)
             with open(zip_path, "rb") as f:
-                st.download_button("⬇️ Télécharger le ZIP", f, file_name=zip_path)
+                st.download_button("Télécharger le ZIP", f, file_name=zip_path)
             os.remove(zip_path)
     except FileNotFoundError:
-        st.warning(f"⚠️ Aucun fichier trouvé dans `{DATA_CLEAN}`.")
+        st.warning(f"Aucun fichier trouvé dans `{DATA_CLEAN}`.")
 
-# -----------------------------
-# 4. Dashboard
-# -----------------------------
-elif choice == "4️⃣ Dashboard":
-    st.subheader("📊 Visualisation des données nettoyées")
+elif choice == "4. Dashboard":
+    st.subheader("Visualisation des données nettoyées")
 
     try:
         files = [f for f in os.listdir(DATA_CLEAN) if f.endswith(".csv")]
@@ -132,15 +110,20 @@ elif choice == "4️⃣ Dashboard":
             df_clean = pd.read_csv(os.path.join(DATA_CLEAN, fichier))
             display_dashboard(df_clean)
     except FileNotFoundError:
-        st.warning(f"⚠️ Aucun fichier trouvé dans `{DATA_CLEAN}`.")
+        st.warning(f"Aucun fichier trouvé dans `{DATA_CLEAN}`.")
     except Exception as e:
-        st.error(f"❌ Une erreur est survenue : {e}")
+        st.error(f"Une erreur est survenue : {e}")
 
+<<<<<<< HEAD
 # -----------------------------
 # 5. Kobotools
 # -----------------------------
 elif choice == "5️⃣ Formulaire Kobotools":
     st.subheader("📝 Évaluation via Kobotools")
+=======
+elif choice == "5. Formulaire Kobotools":
+    st.subheader("Évaluation via Kobotools")
+>>>>>>> 603a13f (yes)
 
     st.components.v1.html(
         """

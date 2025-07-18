@@ -4,25 +4,24 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import os
 
-# -----------------------------------------------
-# 1. Fonction de nettoyage des données
-# -----------------------------------------------
+# Fonction de nettoyage des données
+
 
 def clean_data(input_path, output_path=None):
     try:
         df = pd.read_csv(input_path)
 
-        # Nettoyage de base
-        df.dropna(how='all', inplace=True)  # Supprimer lignes vides
-        df.drop_duplicates(inplace=True)    # Supprimer doublons
+    
+        df.dropna(how='all', inplace=True) 
+        df.drop_duplicates(inplace=True)   
 
-        # Nettoyer les prix s'ils existent
+        
         if "prix" in df.columns:
             df["prix"] = df["prix"].astype(str).str.replace(r"[^\d]", "", regex=True)
             df["prix"] = pd.to_numeric(df["prix"], errors="coerce")
             df = df[df["prix"] > 0]  # On garde que les prix positifs
 
-        # Nettoyer les noms de colonnes
+        
         df.columns = [col.strip().lower().replace(" ", "_") for col in df.columns]
 
         if output_path:
@@ -36,17 +35,17 @@ def clean_data(input_path, output_path=None):
         return pd.DataFrame()
 
 
-# -----------------------------------------------
-# 2. Dashboard des données nettoyées
-# -----------------------------------------------
+
+# Dashboard des données nettoyées
+
 
 def display_dashboard(df):
-    st.markdown("## 📊 Dashboard interactif")
+    st.subheader("Dashboard interactif")
     
-    st.markdown("### 🔍 Aperçu rapide des données")
+    st.write("Aperçu rapide des données")
     st.dataframe(df.head())
 
-    st.markdown("### 📈 Statistiques sur les prix")
+    st.write("Statistiques sur les prix")
 
     try:
         # Nettoyage de la colonne 'prix'
@@ -70,4 +69,4 @@ def display_dashboard(df):
         st.bar_chart(df_clean["prix_num"])
     
     except Exception as e:
-        st.error(f"❌ Une erreur est survenue : {e}")
+        st.error(f"Une erreur est survenue : {e}")
