@@ -114,21 +114,3 @@ elif choice == "4. Dashboard":
     except Exception as e:
         st.error(f"Une erreur est survenue : {e}")
 
-<<<<<<< HEAD
-# -----------------------------
-# 5. Kobotools
-# -----------------------------
-elif choice == "5️⃣ Formulaire Kobotools":
-    st.subheader("📝 Évaluation via Kobotools")
-=======
-elif choice == "5. Formulaire Kobotools":
-    st.subheader("Évaluation via Kobotools")
->>>>>>> 603a13f (yes)
-
-    st.components.v1.html(
-        """
-        <iframe src="https://ee.kobotoolbox.org/i/WoLHl7cc" width="50%" height="600" frameborder="0"></iframe>
-        """,
-        height=650,
-        scrolling=True
-    )
