@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from scraping import scrape_category
+from scraper import scrape_category
 from utils import clean_data, display_dashboard
 
 st.set_page_config(page_title="Exam - Web Scraper App", layout="wide")
