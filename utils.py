@@ -38,7 +38,6 @@ def clean_data(input_path, output_path=None):
 
 # Dashboard des données nettoyées
 
-
 def display_dashboard(df):
     st.subheader("Dashboard interactif")
     
@@ -50,10 +49,15 @@ def display_dashboard(df):
     try:
         # Nettoyage de la colonne 'prix'
         df_clean = df.copy()
+
+        # 🔧 CORRECTION : forcer la colonne en string
+        df_clean["prix"] = df_clean["prix"].astype(str)
+
+        # Filtrer les valeurs contenant "CFA" et exclure "Prix sur demande"
         df_clean = df_clean[df_clean['prix'].str.contains("CFA", na=False)]
         df_clean = df_clean[~df_clean['prix'].str.contains("Prix sur demande", case=False, na=False)]
 
-        # Supprimer les caractères inutiles et convertir en nombre
+        # Nettoyer et convertir les prix en nombres
         df_clean["prix_num"] = df_clean["prix"].str.replace("CFA", "", regex=False)
         df_clean["prix_num"] = df_clean["prix_num"].str.replace(" ", "", regex=False)
         df_clean["prix_num"] = pd.to_numeric(df_clean["prix_num"], errors="coerce")
